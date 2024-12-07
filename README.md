@@ -44,7 +44,7 @@ Ensure you have the following installed:
 ## Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/video-frame-extractor.git
+   git clone https://github.com/rajeshdhanda/video-frame-extractor.git
    cd video-frame-extractor
    ```
 2. Set up a virtual environment (optional but recommended):
