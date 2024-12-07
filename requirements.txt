@@ -1,0 +1,5 @@
+opencv-python
+fpdf
+python-pptx
+PyQt5
+GPUtil
