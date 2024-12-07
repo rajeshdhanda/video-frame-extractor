@@ -2,10 +2,11 @@
 
 # Video Frame Extractor
 
-![App Screenshot](app.png)
-
 ## Overview
 **Video Frame Extractor** is a Python-based application designed to extract frames from videos at regular intervals and save them into PDF or PPTX files. It provides a simple and efficient way to process videos and generate documents containing key frames for various purposes like presentations, analysis, or documentation.
+
+
+![App Screenshot](app.png)
 
 ---
 
