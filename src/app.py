@@ -155,35 +155,8 @@ class VideoConverterWorker(QThread):
             self.progress_signal.emit(current_progress)
             self.detailed_progress_signal.emit(progress_details)
 
-
-        # with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-        #     futures = {
-        #         executor.submit(self.process_video, video_path): video_path
-        #         for video_path in self.video_paths
-        #     }
-
-        #     for idx, future in enumerate(as_completed(futures), 1):
-        #         video_path = futures[future]
-        #         try:
-        #             result = future.result()
-        #             if result:
-        #                 progress_details["successful_conversions"] += 1
-        #                 # self.completed_signal.emit(f"✅ Processed: {video_path}")
-        #             else:
-        #                 progress_details["failed_conversions"] += 1
-        #                 self.completed_signal.emit(f"❌ Failed to process: {video_path}")
-        #         except Exception as e:
-        #             progress_details["failed_conversions"] += 1
-        #             self.completed_signal.emit(f"❌ Error processing {video_path}: {e}")
-
-        #         progress_details["processed_files"] = idx
-        #         current_progress = int(idx * progress_step)
-                
-        #         self.progress_signal.emit(current_progress)
-        #         self.detailed_progress_signal.emit(progress_details)
-
         # Stop resource monitoring
-        self.monitoring_timer.stop()
+        # self.monitoring_timer.stop()
 
         total_time = time.time() - start_time
         final_message = (
@@ -228,7 +201,7 @@ class VideoConverterWorker(QThread):
 class VideoConverterApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("🎬 Advanced Video Converter")
+        self.setWindowTitle("🎬 Video Frame Extractor")
         self.setup_global_styles()
         self.setup_ui()
         self.center_on_screen()
@@ -248,9 +221,24 @@ class VideoConverterApp(QMainWindow):
         global_font = QFont("Segoe UI", 10)
         QApplication.setFont(global_font)
 
+
+
     def setup_ui(self):
         """Comprehensive UI setup with modern design principles."""
-        self.setGeometry(100, 100, 1400, 900)
+        
+        # Get screen size and adjust window size to fit within the screen
+        screen_geometry = QDesktopWidget().availableGeometry()
+        screen_width = screen_geometry.width()
+        screen_height = screen_geometry.height()
+        
+        window_width = 1500  # desired width
+        window_height = 900  # desired height
+        
+        # Ensure window size does not exceed screen size
+        window_width = min(window_width, screen_width)
+        window_height = min(window_height, screen_height)
+        
+        self.setGeometry(100, 100, window_width, window_height)
         self.setStyleSheet(f"""
             QMainWindow {{
                 background-color: {self.COLOR_BACKGROUND};
@@ -285,6 +273,8 @@ class VideoConverterApp(QMainWindow):
         main_layout.addWidget(top_section)
         main_layout.addWidget(progress_section)
         main_layout.addWidget(log_section)
+
+
 
     def update_frame_interval(self):
         """Update the frame_interval value."""
@@ -424,51 +414,6 @@ class VideoConverterApp(QMainWindow):
         controls_section.addWidget(self.convert_button)
         top_layout.addLayout(controls_section)
 
-
-
-        # # Conversion controls
-        # controls_section = QVBoxLayout()
-        # controls_label = self.create_section_label("⚙️ Conversion Settings")
-        # self.output_format = QComboBox()
-        # self.output_format.setStyleSheet(f"""
-        #     QComboBox {{
-        #         border: 1px solid {self.COLOR_PRIMARY};
-        #         border-radius: 6px;
-        #         padding: 8px;
-        #         background-color: white;
-        #     }}
-        #     QComboBox::drop-down {{
-        #         subcontrol-origin: padding;
-        #         subcontrol-position: top right;
-        #         width: 30px;
-        #         border-left-width: 1px;
-        #         border-left-color: {self.COLOR_PRIMARY};
-        #         border-left-style: solid;
-        #         background-color: {self.COLOR_PRIMARY};
-        #     }}
-        # """)
-        # self.output_format.addItems(["PDF", "PPTX"])
-        # self.convert_button = QPushButton("Start Conversion")
-        # self.convert_button.setStyleSheet(f"""
-        #     QPushButton {{
-        #         background-color: {self.COLOR_ACCENT};
-        #         color: white;
-        #         border: none;
-        #         border-radius: 6px;
-        #         padding: 12px 20px;
-        #         font-weight: bold;
-        #         font-size: 12pt;
-        #     }}
-        #     QPushButton:hover {{
-        #         background-color: #c0392b;
-        #     }}
-        # """)
-        # self.convert_button.clicked.connect(self.convert_videos)
-        # controls_section.addWidget(controls_label)
-        # controls_section.addWidget(self.output_format)
-        # controls_section.addWidget(self.convert_button)
-        # top_layout.addLayout(controls_section)
-
         return top_widget
 
 
@@ -548,6 +493,9 @@ class VideoConverterApp(QMainWindow):
             font-size: 12pt;
         """)
         return label
+    
+
+    
 
     def center_on_screen(self):
         """Center the application window on the screen."""
@@ -600,11 +548,11 @@ class VideoConverterApp(QMainWindow):
         
         if file_dialog.exec_():
             self.video_paths = file_dialog.selectedFiles()
-            preview_text = ", ".join([os.path.basename(path) for path in self.video_paths[:5]])
+            preview_text = ", \n".join([os.path.basename(path)[:30]+"..." for path in self.video_paths[:5]])
             if len(self.video_paths) > 5:
-                preview_text += f" ...and {len(self.video_paths) - 5} more"
+                preview_text += f"\n ...and {len(self.video_paths) - 5} more"
             
-            self.file_path_label.setText(f"{len(self.video_paths)} files selected: {preview_text}")
+            self.file_path_label.setText(f"{len(self.video_paths)} files selected:\n {preview_text}")
 
     def select_folder(self):
         """Enhanced folder selection with path preview."""
@@ -686,20 +634,54 @@ class VideoConverterApp(QMainWindow):
 
     def update_system_stats(self, stats):
         """Update system resource statistics."""
-        cpu_info = stats["CPU"]
-        memory_info = stats["Memory"]
-        gpu_info = stats["GPU"]
+        # Get CPU info with default values if keys are missing
+        cpu_info = stats.get("CPU", {})
+        cpu_usage = cpu_info.get("usage", "N/A")
+        cpu_cores = cpu_info.get("cores", "N/A")
+        cpu_freq = cpu_info.get("frequency", "N/A")
 
-        gpu_stats = "\n".join([
-            f"{gpu['name']}: {gpu['memory_used']}/{gpu['memory_total']} MB, Load: {gpu['gpu_load']}"
-            for gpu in gpu_info
-        ]) if gpu_info else "No GPU detected."
+        # Get memory info with default values if keys are missing
+        memory_info = stats.get("Memory", {})
+        memory_used = memory_info.get("used", "N/A")
+        memory_available = memory_info.get("available", "N/A")
 
+        # Get GPU info, defaulting to an empty list if missing
+        gpu_info = stats.get("GPU", [])
+        
+        if gpu_info:
+            gpu_stats = "\n".join([
+                f"{gpu.get('name', 'N/A')}: "
+                f"{gpu.get('memory_used', 'N/A')}/{gpu.get('memory_total', 'N/A')} MB, "
+                f"Load: {gpu.get('gpu_load', 'N/A')}"
+                for gpu in gpu_info
+            ])
+        else:
+            gpu_stats = "No GPU detected."
+
+        # Update the label with the gathered system stats
         self.system_stats_label.setText(
-            f"CPU Usage: {cpu_info['usage']} | Cores: {cpu_info['cores']} | Freq: {cpu_info['frequency']}\n"
-            f"Memory Usage: {memory_info['used']} | Available: {memory_info['available']}\n"
+            f"CPU Usage: {cpu_usage} | Cores: {cpu_cores} | Freq: {cpu_freq} \n"
+            f"Memory Usage: {memory_used} | Available: {memory_available} \n"
             f"GPU Stats:\n{gpu_stats}"
-        )
+    )
+
+
+    # def update_system_stats(self, stats):
+    #     """Update system resource statistics."""
+    #     cpu_info = stats["CPU"]
+    #     memory_info = stats["Memory"]
+    #     gpu_info = stats["GPU"]
+
+    #     gpu_stats = "\n".join([
+    #         f"{gpu['name']}: {gpu['memory_used']}/{gpu['memory_total']} MB, Load: {gpu['gpu_load']}"
+    #         for gpu in gpu_info
+    #     ]) if gpu_info else "No GPU detected."
+
+    #     self.system_stats_label.setText(
+    #         f"CPU Usage: {cpu_info['usage']} | Cores: {cpu_info['cores']} | Freq: {cpu_info['frequency']}\n"
+    #         f"Memory Usage: {memory_info['used']} | Available: {memory_info['available']}\n"
+    #         f"GPU Stats:\n{gpu_stats}"
+    #     )
 
 
 if __name__ == "__main__":
